@@ -9,9 +9,9 @@ import (
 )
 
 type Node struct {
-	name  string
-	ip    []string
-	port  int
+	Name  string
+	Ip    []string
+	Port  int
 	Index int
 }
 

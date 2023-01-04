@@ -20,13 +20,13 @@ func main() {
 		log.Fatal("dialing:", err)
 	}
 	var node Node
-	node.name, err = os.Hostname()
-	addr, err := net.LookupHost(node.name)
+	node.Name, err = os.Hostname()
+	addr, err := net.LookupHost(node.Name)
 	if err != nil {
 		log.Fatal("arith error:", err)
 	}
-	node.ip = addr
-	node.port = 8001
+	node.Ip = addr
+	node.Port = 8001
 	var reply Node
 	fmt.Print(node)
 	err = client.Call("Manager.Register", &node, &reply)
