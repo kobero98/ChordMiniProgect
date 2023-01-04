@@ -8,13 +8,6 @@ import (
 	"net/rpc"
 )
 
-type Node struct {
-	Name  string
-	Ip    []string
-	Port  int
-	Index int
-}
-
 type Manager int
 
 type appoggio struct {
@@ -22,30 +15,70 @@ type appoggio struct {
 	status int
 }
 
-var lista_nodi [20]appoggio
+var lista_nodi []appoggio
 var count = 0
 var request = 0
 
 func printList() {
-	for i := 0; i < count; i++ {
+	for i := 0; i < len(lista_nodi); i++ {
 		fmt.Println(lista_nodi[i].nodo)
 	}
 }
-func (t *Manager) Register(node *Node, reply *Node) error {
+func add_elemento(n appoggio) {
+	if len(lista_nodi) == 0 {
+		lista_nodi = append(lista_nodi, n)
+		return
+	}
+	var app []appoggio
+	app = append(app, n)
+	index := -1
+	for i := 0; i < len(lista_nodi); i++ {
+		if lista_nodi[i].nodo.Index > n.nodo.Index {
+			index = i
+			return
+		}
+	}
+
+	if index == 0 {
+		lista_nodi = append(app, lista_nodi...)
+		return
+	}
+	if index == -1 {
+		lista_nodi = append(lista_nodi, app...)
+		return
+	}
+	app = append(app, lista_nodi[index:]...)
+	lista_nodi = append(lista_nodi[:index], app...)
+	return
+}
+func get_PrecSucc(n Node) (Node, Node) {
+	for i := 0; i < len(lista_nodi); i++ {
+		if n.Index == lista_nodi[i].nodo.Index {
+			return lista_nodi[i-1%len(lista_nodi)].nodo, lista_nodi[i+1%len(lista_nodi)].nodo
+		}
+	}
+	return n, n
+}
+func (t *Manager) Register(node *Node, reply *ReplyRegistration) error {
 	fmt.Println("un nodo si é connesso", count, request)
 	fmt.Println(*node)
-	lista_nodi[count].nodo = *node
-	lista_nodi[count].status = 1
+	var a appoggio
+	a.nodo = *node
+	a.status = 1
+	add_elemento(a)
 	count = count + 1
 	if count == 1 {
 		reply = nil
 		return nil
 	}
-	reply = &lista_nodi[request].nodo
-	request = (request + 1) % count
+	var rep ReplyRegistration
+	rep.Precedente, rep.Successivo = get_PrecSucc(*node)
+	rep.NumNod = count
+	reply = &rep
 	printList()
 	return nil
 }
+
 func (t *Manager) Unregister(node *Node, reply *Node) error {
 	fmt.Println("un nodo si é disconnesso")
 	count = count - 1
@@ -54,6 +87,7 @@ func (t *Manager) Unregister(node *Node, reply *Node) error {
 }
 func main() {
 	fmt.Println("inizio programma in go")
+	lista_nodi = make([]appoggio, 0)
 	manage := new(Manager)
 	rpc.Register(manage)
 	rpc.HandleHTTP()
@@ -64,35 +98,3 @@ func main() {
 	http.Serve(l, nil)
 	fmt.Println("fine programma in go")
 }
-
-/*
-
-func (t *Manager) Registretion(node *Node,reply *Node, numNod *int) error{
-	lista_nodi[count]=node;
-	count=count+1;
-	numNod=count
-	if count==1{
-		reply=nil
-		return nil
-	}
-	else{
-		reply=lista_nodi[request]
-		request=request+1
-		return nil
-	}
-}
-
-func (t *Manager) Unregistration(node *Node,cod *int){
-	for i := 0; i < count; i++ {
-		if lista_nodi[i].Index==node.Index {
-			lista_nodi[i]=nil
-			count=count-1;
-			cod=0
-			return nil
-		}
-
-	}
-	cod=-1
-	return nil
-}
-*/
