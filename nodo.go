@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"net/http"
 	"net/rpc"
 	"os"
 	"strconv"
@@ -32,13 +33,29 @@ func checkMyKey(key int) bool {
 	return ok
 }
 
-func (t *ChordNode) succ(key *int, reply *Node) {
-	return
+func (t *ChordNode) succ(key *int, reply *Node) error {
+	return nil
 }
-func (t *ChordNode) get() {
-	return
+func (t *ChordNode) get(key *int, reply *string) error {
+	if checkMyKey(*key) {
+		str := myMap[*key]
+		reply = &str
+		return nil
+	} else {
+		client, err := rpc.DialHTTP("tcp", mySuccessivo.Ip[0]+strconv.Itoa(mySuccessivo.Port))
+		if err != nil {
+			log.Fatal("dialing:", err)
+		}
+		var reply ReplyRegistration
+		err = client.Call("ChordNode.get", key, reply)
+		if err != nil {
+			log.Fatal("arith error:", err)
+		}
+	}
+
+	return nil
 }
-func (t *ChordNode) put(parola *string, reply *int) {
+func (t *ChordNode) put(parola *string, reply *int) error {
 	key := calcolo_hash(*parola)
 	if checkMyKey(key) {
 		myMap[key] = *parola
@@ -49,13 +66,13 @@ func (t *ChordNode) put(parola *string, reply *int) {
 			log.Fatal("dialing:", err)
 		}
 		var reply ReplyRegistration
-		err = client.Call("Manager.Register", &myNode, &reply)
+		err = client.Call("ChordNode.put", parola, reply)
 		if err != nil {
 			log.Fatal("arith error:", err)
 		}
 	}
 	*reply = 1
-	return
+	return nil
 }
 
 var Addr_Server_register = "0.0.0.0"
@@ -85,24 +102,89 @@ func init_FingerTable(node *Node) {
 func init_Node() {
 	var err error
 	myNode.Name, err = os.Hostname()
+	myNode.Name = os.Args[1]
 	addr, err := net.LookupHost(myNode.Name)
 	if err != nil {
 		log.Fatal("arith error:", err)
 	}
 	myNode.Ip = addr
 	myNode.Port = 8001
+	myNode.Port, _ = strconv.Atoi(os.Args[2])
 	myNode.Index = calcolo_hash(myNode.Name)
 	fmt.Print("ciao")
 	fmt.Println(myNode)
 	fmt.Print("ciao")
 }
-func init_map() {
-	for i := myPrecedente.Index + 1; i <= myNode.Index; i = (i + 1) % 255 {
-		myMap[i] = ""
+func init_map(flag int) {
+	myMap = make(map[int]string)
+	for i := (myPrecedente.Index + 1) * flag % 256; i != (myNode.Index+1)*flag+256*(1-flag); i = (i + 1) % (256*flag + 257*(1-flag)) {
+		myMap[i] = os.Args[2]
 	}
+}
+func (t *ChordNode) Precedente(node *Node, reply *map[int]string) error {
+	var c int = 0
+	for i := (myPrecedente.Index + 1) % 256; i != (node.Index+1)%256; i = (i + 1) % 256 {
+		(*reply)[i] = myMap[i]
+		delete(myMap, i)
+		c++
+	}
+	myPrecedente = *node
+	fmt.Println(myMap)
+	return nil
+}
+func (t *ChordNode) Successivo(node *Node, reply *int) error {
+	mySuccessivo = *node
+	return nil
+}
+func comunicationToSuccessivo() {
+	client, err := rpc.DialHTTP("tcp", "0.0.0.0"+":"+strconv.Itoa(mySuccessivo.Port))
+	if err != nil {
+		log.Fatal("dialing:", err)
+	}
+	var reply = make(map[int]string)
+	err = client.Call("ChordNode.Precedente", &myNode, &reply)
+	if err != nil {
+		log.Fatal("arith error:", err)
+	}
+	for key, value := range reply {
+		myMap[key] = value
+	}
+	client.Close()
+}
+func comunicationToPrecedente() {
+	client, err := rpc.DialHTTP("tcp", "0.0.0.0"+":"+strconv.Itoa(myPrecedente.Port))
+	if err != nil {
+		log.Fatal("dialing:", err)
+	}
+	var reply int
+	err = client.Call("ChordNode.Successivo", &myNode, &reply)
+	if err != nil {
+		log.Fatal("arith error:", err)
+	}
+	client.Close()
 }
 func main() {
 	init_Node()
-	//myPrecedente, mySuccessivo := init_registration()
-	init_map()
+	myPrecedente, mySuccessivo = init_registration()
+	if myPrecedente.Name == "" {
+		init_map(0)
+		myPrecedente = myNode
+		mySuccessivo = myNode
+
+	} else {
+		init_map(1)
+		comunicationToPrecedente()
+		comunicationToSuccessivo()
+	}
+	fmt.Println(myMap)
+	chord := new(ChordNode)
+	rpc.Register(chord)
+	rpc.HandleHTTP()
+	l, e := net.Listen("tcp", ":"+os.Args[2])
+	if e != nil {
+		log.Fatal("listen error:", e)
+	}
+	http.Serve(l, nil)
+	fmt.Println("fine programma in go")
+
 }

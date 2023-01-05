@@ -20,6 +20,7 @@ var count = 0
 var request = 0
 
 func printList() {
+	fmt.Println("dimensione lista", len(lista_nodi))
 	for i := 0; i < len(lista_nodi); i++ {
 		fmt.Println(lista_nodi[i].nodo)
 	}
@@ -35,26 +36,33 @@ func add_elemento(n appoggio) {
 	for i := 0; i < len(lista_nodi); i++ {
 		if lista_nodi[i].nodo.Index > n.nodo.Index {
 			index = i
-			return
+			break
 		}
 	}
-
 	if index == 0 {
 		lista_nodi = append(app, lista_nodi...)
+		fmt.Println("dimensione lista", len(lista_nodi))
 		return
 	}
 	if index == -1 {
 		lista_nodi = append(lista_nodi, app...)
+		fmt.Println("dimensione lista", len(lista_nodi))
 		return
 	}
 	app = append(app, lista_nodi[index:]...)
 	lista_nodi = append(lista_nodi[:index], app...)
+	fmt.Println("dimensione lista", len(lista_nodi))
 	return
 }
 func get_PrecSucc(n Node) (Node, Node) {
+
 	for i := 0; i < len(lista_nodi); i++ {
 		if n.Index == lista_nodi[i].nodo.Index {
-			return lista_nodi[i-1%len(lista_nodi)].nodo, lista_nodi[i+1%len(lista_nodi)].nodo
+			if i == 0 {
+				return lista_nodi[len(lista_nodi)-1].nodo, lista_nodi[(i+1)%len(lista_nodi)].nodo
+			}
+			fmt.Println("valore lista ", (i-1)%len(lista_nodi), (i+1)%len(lista_nodi))
+			return lista_nodi[(i-1)%len(lista_nodi)].nodo, lista_nodi[(i+1)%len(lista_nodi)].nodo
 		}
 	}
 	return n, n
@@ -71,10 +79,14 @@ func (t *Manager) Register(node *Node, reply *ReplyRegistration) error {
 		reply = nil
 		return nil
 	}
-	var rep ReplyRegistration
+	/*var rep ReplyRegistration
 	rep.Precedente, rep.Successivo = get_PrecSucc(*node)
 	rep.NumNod = count
 	reply = &rep
+	*/
+	reply.Precedente, reply.Successivo = get_PrecSucc(*node)
+	reply.NumNod = count
+	fmt.Println(*reply)
 	printList()
 	return nil
 }
@@ -86,6 +98,7 @@ func (t *Manager) Unregister(node *Node, reply *Node) error {
 	return nil
 }
 func main() {
+
 	fmt.Println("inizio programma in go")
 	lista_nodi = make([]appoggio, 0)
 	manage := new(Manager)
@@ -97,4 +110,5 @@ func main() {
 	}
 	http.Serve(l, nil)
 	fmt.Println("fine programma in go")
+
 }
