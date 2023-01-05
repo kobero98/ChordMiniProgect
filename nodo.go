@@ -146,25 +146,17 @@ func init_Node() {
 	fmt.Println(myNode)
 	fmt.Print("ciao")
 }
-func init_map(flag int) {
-	myMap = make(map[int]string)
-	for i := (myPrecedente.Index + 1) * flag % 256; i != (myNode.Index+1)*flag+256*(1-flag); i = (i + 1) % (256*flag + 257*(1-flag)) {
-		myMap[i] = os.Args[2]
-	}
-}
-func (t *ChordNode) Precedente(node *Node, reply *map[int]string) error {
-	//var c int = 0
-	/*for i := (myPrecedente.Index + 1) % 256; i != (node.Index+1)%256; i = (i + 1) % 256 {
-		(*reply)[i] = myMap[i]
-		delete(myMap, i)
-		c++
-	}*/
+func (t *ChordNode) Precedente(node *Node, reply *int) error {
 	myPrecedente = *node
-	//fmt.Println(myMap)
+	*reply = 1
 	return nil
 }
 func (t *ChordNode) Successivo(node *Node, reply *int) error {
 	mySuccessivo = *node
+	return nil
+}
+func (t *ChordNode) HeartBit(answer *int, reply *int) error {
+	*reply = 1
 	return nil
 }
 func comunicationToSuccessivo() {
@@ -172,14 +164,11 @@ func comunicationToSuccessivo() {
 	if err != nil {
 		log.Fatal("dialing:", err)
 	}
-	var reply = make(map[int]string)
+	var reply int
 	err = client.Call("ChordNode.Precedente", &myNode, &reply)
 	if err != nil {
 		log.Fatal("arith error:", err)
 	}
-	/*for key, value := range reply {
-		myMap[key] = value
-	}*/
 	client.Close()
 }
 func comunicationToPrecedente() {
@@ -194,21 +183,30 @@ func comunicationToPrecedente() {
 	}
 	client.Close()
 }
+func ChangeStatus() {
+	client, err := rpc.DialHTTP("tcp", "0.0.0.0"+":8000")
+	if err != nil {
+		log.Fatal("dialing:", err)
+	}
+	var reply int
+	err = client.Call("Manager.ChangeStatus", &myNode, &reply)
+	if err != nil {
+		log.Fatal("arith error:", err)
+	}
+	client.Close()
+}
 func main() {
 	init_Node()
 	myMap = make(map[int]string)
 	myPrecedente, mySuccessivo = init_registration()
-	if myPrecedente.Name == "" {
-		//init_map(0)
+	if myPrecedente.Name == "" && myPrecedente.Port == 0 {
 		myPrecedente = myNode
 		mySuccessivo = myNode
 
 	} else {
-		//init_map(1)
 		comunicationToPrecedente()
 		comunicationToSuccessivo()
 	}
-	fmt.Println(myMap)
 	chord := new(ChordNode)
 	rpc.Register(chord)
 	rpc.HandleHTTP()
@@ -216,7 +214,7 @@ func main() {
 	if e != nil {
 		log.Fatal("listen error:", e)
 	}
+	ChangeStatus()
 	http.Serve(l, nil)
 	fmt.Println("fine programma in go")
-
 }
