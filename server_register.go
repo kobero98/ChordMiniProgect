@@ -98,7 +98,6 @@ func (t *Manager) Unregister(node *Node, reply *Node) error {
 	return nil
 }
 func main() {
-
 	fmt.Println("inizio programma in go")
 	lista_nodi = make([]appoggio, 0)
 	manage := new(Manager)

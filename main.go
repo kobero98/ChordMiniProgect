@@ -1,42 +1,31 @@
 package main
 
 import (
-	"crypto/md5"
 	"fmt"
 	"log"
 	"net/rpc"
 	"os"
 )
 
-var server_register = "0.0.0.0"
-var s [128]Node
+func main() {
 
-func Looking(s string) {
-	fmt.Println("fase di ricerca ancora non introdotta")
-}
-
-func init() {
-	client, err := rpc.DialHTTP("tcp", server_register+":1234")
+	client, err := rpc.DialHTTP("tcp", "0.0.0.0:8003")
 	if err != nil {
 		log.Fatal("dialing:", err)
 	}
-	client.Call()
-
-}
-
-func main() {
-	fmt.Println("Hello Word")
-	hostname, err := os.Hostname()
+	var reply int
+	var parola string
+	parola = os.Args[1]
+	fmt.Println(parola)
+	err = client.Call("ChordNode.Put", &parola, &reply)
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		log.Fatal("arith error:", err)
 	}
-	fmt.Printf("Hostname: %s", hostname)
-	s := hostname
-	h := md5.New()
-	h.Write([]byte(s))
-	bs := h.Sum(nil)
-	fmt.Println(s)
-	fmt.Println(bs)
-	fmt.Printf("%x\n", bs)
+	fmt.Println("risposta: ", reply)
+	var parola2 string
+	err = client.Call("ChordNode.Get", &reply, &parola2)
+	if err != nil {
+		log.Fatal("arith error:", err)
+	}
+	fmt.Println("parola messa: ", parola2)
 }
