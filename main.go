@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/rpc"
 	"os"
+	"strconv"
 )
 
 func main() {
@@ -15,17 +16,22 @@ func main() {
 	}
 	var reply int
 	var parola string
-	parola = os.Args[1]
-	fmt.Println(parola)
-	err = client.Call("ChordNode.Put", &parola, &reply)
-	if err != nil {
-		log.Fatal("arith error:", err)
+	x, _ := strconv.Atoi(os.Args[2])
+	if x == 1 {
+		parola = os.Args[1]
+		fmt.Println(parola)
+		err = client.Call("ChordNode.Put", &parola, &reply)
+		if err != nil {
+			log.Fatal("arith error:", err)
+		}
+		fmt.Println("risposta: ", reply)
+	} else {
+		reply, _ = strconv.Atoi(os.Args[1])
+		var parola2 string
+		err = client.Call("ChordNode.Get", &reply, &parola2)
+		if err != nil {
+			log.Fatal("arith error:", err)
+		}
+		fmt.Println("parola messa: ", parola2)
 	}
-	fmt.Println("risposta: ", reply)
-	var parola2 string
-	err = client.Call("ChordNode.Get", &reply, &parola2)
-	if err != nil {
-		log.Fatal("arith error:", err)
-	}
-	fmt.Println("parola messa: ", parola2)
 }

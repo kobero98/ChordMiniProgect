@@ -95,11 +95,17 @@ func (t *ChordNode) Put(parola *string, reply *int) error {
 	} else {
 		client, err := rpc.DialHTTP("tcp", mySuccessivo.Ip[0]+":"+strconv.Itoa(mySuccessivo.Port))
 		if err != nil {
-			log.Fatal("dialing:", err)
+			myPrecedente, mySuccessivo = init_registration()
+			//log.Fatal("dialing:", err)
+			fmt.Println("ri ottentimento del precedente e del successivo")
+			return err
 		}
 		err = client.Call("ChordNode.Put", parola, reply)
 		if err != nil {
-			log.Fatal("arith error:", err)
+			myPrecedente, mySuccessivo = init_registration()
+			//log.Fatal("arith error:", err)
+			fmt.Println("ri ottentimento del precedente e del successivo")
+			return err
 		}
 	}
 	*reply = key
@@ -133,18 +139,21 @@ func init_FingerTable(node *Node) {
 func init_Node() {
 	var err error
 	myNode.Name, err = os.Hostname()
-	myNode.Name = os.Args[1]
 	addr, err := net.LookupHost(myNode.Name)
 	if err != nil {
-		log.Fatal("arith error:", err)
+		log.Fatal("errore nel ottenere l'indirizzo ip dell'host:", err)
 	}
+	myNode.Name = os.Args[1]
 	myNode.Ip = addr
+	// provvisorio
+	myNode.Ip = make([]string, 1)
+	myNode.Ip[0] = "127.0.0.1"
+	fmt.Println(myNode.Ip)
+
 	myNode.Port = 8001
 	myNode.Port, _ = strconv.Atoi(os.Args[2])
 	myNode.Index = calcolo_hash(myNode.Name)
-	fmt.Print("ciao")
 	fmt.Println(myNode)
-	fmt.Print("ciao")
 }
 func (t *ChordNode) Precedente(node *Node, reply *int) error {
 	myPrecedente = *node
