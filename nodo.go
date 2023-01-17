@@ -37,10 +37,6 @@ func checkMyKey2(key int) bool {
 	}
 	return key > myPrecedente.Index || key <= myNode.Index
 }
-func checkMyKey(key int) bool {
-	_, ok := myMap[key]
-	return ok
-}
 
 func (t *ChordNode) Remove(key *int, reply *string) error {
 	fmt.Println("mi hanno contattato per rimuove la kiave: ", *key)
@@ -63,7 +59,7 @@ func (t *ChordNode) Remove(key *int, reply *string) error {
 }
 
 func (t *ChordNode) Get(key *int, reply *string) error {
-	fmt.Println("mi hanno contattato per la kiave: ", *key)
+	fmt.Println("mi hanno contattato per la chiave: ", *key)
 	fmt.Println("io mi occupo di: ", myPrecedente.Index, myNode.Index)
 	if checkMyKey2(*key) {
 		str, test := myMap[*key]
@@ -132,10 +128,6 @@ func init_registration() (Node, Node) {
 	return reply.Precedente, reply.Successivo
 }
 
-func init_FingerTable(node *Node) {
-	return
-}
-
 func init_Node() {
 	var err error
 	myNode.Name, err = os.Hostname()
@@ -146,14 +138,8 @@ func init_Node() {
 	port := os.Getenv("PORT_EXSPOST")
 
 	myNode.PortExtern, _ = strconv.Atoi(port)
-	//myNode.Name = os.Args[1]
 	myNode.Ip = addr
-	// provvisorio
-	//myNode.Ip = make([]string, 1)
-	//myNode.Ip[0] = "127.0.0.1"
-	//fmt.Println(myNode.Ip)
 	myNode.Port = 8005
-	//myNode.Port, _ = strconv.Atoi(os.Args[2])
 	myNode.Index = calcolo_hash(myNode.Name)
 	fmt.Println(myNode)
 }

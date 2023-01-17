@@ -129,7 +129,6 @@ func (t *Manager) Unregister(node *Node, reply *Node) error {
 }
 func heartBit() {
 	for {
-		fmt.Println("inizio sessione di monitoraggio:")
 		for i := 0; i < len(lista_nodi); i++ {
 			if lista_nodi[i].status == 1 {
 				client, err := rpc.DialHTTP("tcp", lista_nodi[i].nodo.Ip[0]+":"+strconv.Itoa(lista_nodi[i].nodo.Port))
