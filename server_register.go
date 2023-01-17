@@ -129,6 +129,7 @@ func (t *Manager) Unregister(node *Node, reply *Node) error {
 }
 func heartBit() {
 	for {
+		fmt.Println("inizio sessione di monitoraggio:")
 		for i := 0; i < len(lista_nodi); i++ {
 			if lista_nodi[i].status == 1 {
 				client, err := rpc.DialHTTP("tcp", lista_nodi[i].nodo.Ip[0]+":"+strconv.Itoa(lista_nodi[i].nodo.Port))
@@ -152,6 +153,24 @@ func heartBit() {
 		time.Sleep(10 * time.Second)
 	}
 }
+
+var valore = 0
+
+func (t *Manager) ContactClient(value *int, reply *Node) error {
+	fmt.Println("mi hanno contattato")
+	if len(lista_nodi) < 1 {
+		reply = nil
+		return nil
+	} else {
+		var index = valore % len(lista_nodi)
+		*&reply.Name = lista_nodi[index].nodo.Name
+		*&reply.Port = lista_nodi[index].nodo.PortExtern
+		*&reply.Ip = lista_nodi[index].nodo.Ip
+		*&reply.PortExtern = lista_nodi[index].nodo.PortExtern
+		return nil
+	}
+}
+
 func main() {
 	fmt.Println("inizio programma in go")
 	lista_nodi = make([]appoggio, 0)

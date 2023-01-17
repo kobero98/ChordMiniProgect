@@ -112,7 +112,7 @@ func (t *ChordNode) Put(parola *string, reply *int) error {
 	return nil
 }
 
-var Addr_Server_register = "0.0.0.0"
+var Addr_Server_register = "register"
 
 var myNode Node
 
@@ -143,15 +143,17 @@ func init_Node() {
 	if err != nil {
 		log.Fatal("errore nel ottenere l'indirizzo ip dell'host:", err)
 	}
-	myNode.Name = os.Args[1]
+	port := os.Getenv("PORT_EXSPOST")
+
+	myNode.PortExtern, _ = strconv.Atoi(port)
+	//myNode.Name = os.Args[1]
 	myNode.Ip = addr
 	// provvisorio
-	myNode.Ip = make([]string, 1)
-	myNode.Ip[0] = "127.0.0.1"
-	fmt.Println(myNode.Ip)
-
-	myNode.Port = 8001
-	myNode.Port, _ = strconv.Atoi(os.Args[2])
+	//myNode.Ip = make([]string, 1)
+	//myNode.Ip[0] = "127.0.0.1"
+	//fmt.Println(myNode.Ip)
+	myNode.Port = 8005
+	//myNode.Port, _ = strconv.Atoi(os.Args[2])
 	myNode.Index = calcolo_hash(myNode.Name)
 	fmt.Println(myNode)
 }
@@ -169,7 +171,7 @@ func (t *ChordNode) HeartBit(answer *int, reply *int) error {
 	return nil
 }
 func comunicationToSuccessivo() {
-	client, err := rpc.DialHTTP("tcp", "0.0.0.0"+":"+strconv.Itoa(mySuccessivo.Port))
+	client, err := rpc.DialHTTP("tcp", mySuccessivo.Ip[0]+":"+strconv.Itoa(mySuccessivo.Port))
 	if err != nil {
 		log.Fatal("dialing:", err)
 	}
@@ -181,7 +183,7 @@ func comunicationToSuccessivo() {
 	client.Close()
 }
 func comunicationToPrecedente() {
-	client, err := rpc.DialHTTP("tcp", "0.0.0.0"+":"+strconv.Itoa(myPrecedente.Port))
+	client, err := rpc.DialHTTP("tcp", myPrecedente.Ip[0]+":"+strconv.Itoa(myPrecedente.Port))
 	if err != nil {
 		log.Fatal("dialing:", err)
 	}
@@ -193,7 +195,7 @@ func comunicationToPrecedente() {
 	client.Close()
 }
 func ChangeStatus() {
-	client, err := rpc.DialHTTP("tcp", "0.0.0.0"+":8000")
+	client, err := rpc.DialHTTP("tcp", Addr_Server_register+":8000")
 	if err != nil {
 		log.Fatal("dialing:", err)
 	}
@@ -204,6 +206,7 @@ func ChangeStatus() {
 	}
 	client.Close()
 }
+
 func main() {
 	init_Node()
 	myMap = make(map[int]string)
@@ -219,7 +222,7 @@ func main() {
 	chord := new(ChordNode)
 	rpc.Register(chord)
 	rpc.HandleHTTP()
-	l, e := net.Listen("tcp", ":"+os.Args[2])
+	l, e := net.Listen("tcp", ":8005")
 	if e != nil {
 		log.Fatal("listen error:", e)
 	}
